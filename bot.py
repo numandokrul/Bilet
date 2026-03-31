@@ -34,44 +34,42 @@ def get_best_flight(date):
 
     try:
         data = response.json()
-
-        print("DEBUG RAW:", data)  # 🔥 EKLEDİK
-
         itineraries = data.get("data", {}).get("itineraries", [])
 
         if not itineraries:
-            print("❌ Uçuş bulunamadı:", date)
+            print("❌ Uçuş yok:", date)
             return None
 
         best = None
 
-       for item in itineraries:
-    try:
-        price = float(item["price"]["amount"])
+        for item in itineraries:
+            try:
+                price = float(item["price"]["amount"])
 
-        segment = item["sector"]["sectorSegments"][0]["segment"]
+                segment = item["sector"]["sectorSegments"][0]["segment"]
 
-        airline = segment["carrier"]["name"]
-        departure = segment["source"]["localTime"]
-        arrival = segment["destination"]["localTime"]
+                airline = segment["carrier"]["name"]
+                departure = segment["source"]["localTime"]
+                arrival = segment["destination"]["localTime"]
 
-        if best is None or price < best["price"]:
-            best = {
-                "price": price,
-                "airline": airline,
-                "departure": departure,
-                "arrival": arrival
-            }
+                if best is None or price < best["price"]:
+                    best = {
+                        "price": price,
+                        "airline": airline,
+                        "departure": departure,
+                        "arrival": arrival
+                    }
 
-    except Exception as e:
-        print("Parse hata:", e)
+            except Exception as e:
+                print("Parse hata:", e)
 
-        print("BEST:", best)  # 🔥 EKLEDİK
+        print("BEST:", best)
         return best
 
     except Exception as e:
         print("GENEL HATA:", e)
         return None
+
 
 def check():
     last_sent = None
