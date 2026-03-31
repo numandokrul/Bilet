@@ -45,25 +45,26 @@ def get_best_flight(date):
 
         best = None
 
-        for item in itineraries:
-            try:
-                price = float(item["price"]["amount"])
+       for item in itineraries:
+    try:
+        price = float(item["price"]["amount"])
 
-                leg = item["legs"][0]
-                airline = leg["carriers"]["marketing"][0]["name"]
-                departure = leg["departure"]
-                arrival = leg["arrival"]
+        segment = item["sector"]["sectorSegments"][0]["segment"]
 
-                if best is None or price < best["price"]:
-                    best = {
-                        "price": price,
-                        "airline": airline,
-                        "departure": departure,
-                        "arrival": arrival
-                    }
+        airline = segment["carrier"]["name"]
+        departure = segment["source"]["localTime"]
+        arrival = segment["destination"]["localTime"]
 
-            except Exception as e:
-                print("Parse hata:", e)
+        if best is None or price < best["price"]:
+            best = {
+                "price": price,
+                "airline": airline,
+                "departure": departure,
+                "arrival": arrival
+            }
+
+    except Exception as e:
+        print("Parse hata:", e)
 
         print("BEST:", best)  # 🔥 EKLEDİK
         return best
