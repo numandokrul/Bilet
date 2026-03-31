@@ -9,10 +9,8 @@ API_KEY = os.getenv("API_KEY")
 
 bot = telebot.TeleBot(TOKEN)
 
-MAX_PRICE = 4500
 
-
-def get_best_flight(date):
+def get_prices(date):
     url = "https://flights-scraper-real-time.p.rapidapi.com/flights/search-oneway"
 
     querystring = {
@@ -36,44 +34,27 @@ def get_best_flight(date):
         data = response.json()
         itineraries = data.get("data", {}).get("itineraries", [])
 
-        if not itineraries:
-            print("❌ Uçuş yok:", date)
-            return None
-
-        best = None
+        results = []
 
         for item in itineraries:
             try:
                 price = float(item["price"]["amount"])
 
                 segment = item["sector"]["sectorSegments"][0]["segment"]
-
                 airline = segment["carrier"]["name"]
-                departure = segment["source"]["localTime"]
-                arrival = segment["destination"]["localTime"]
 
-                if best is None or price < best["price"]:
-                    best = {
-                        "price": price,
-                        "airline": airline,
-                        "departure": departure,
-                        "arrival": arrival
-                    }
+                results.append((airline, price))
 
-            except Exception as e:
-                print("Parse hata:", e)
+            except:
+                pass
 
-        print("BEST:", best)
-        return best
+        return results
 
-    except Exception as e:
-        print("GENEL HATA:", e)
-        return None
+    except:
+        return []
 
 
 def check():
-    last_sent = None
-
     dates = [
         "2026-08-23",
         "2026-08-28",
@@ -81,30 +62,22 @@ def check():
     ]
 
     while True:
-        best_overall = None
-        best_date = None
+        message = "✈️ GÜNCEL UÇAK FİYATLARI\n\n"
 
         for d in dates:
-            flight = get_best_flight(d)
+            flights = get_prices(d)
 
-            if flight:
-                print(f"{d}:", flight["price"], flight["airline"])
+            if flights:
+                message += f"📅 {d}\n"
 
-                if best_overall is None or flight["price"] < best_overall["price"]:
-                    best_overall = flight
-                    best_date = d
+                for airline, price in flights[:3]:  # ilk 3 göster
+                    message += f"{airline} → {int(price)} TL\n"
 
-        if best_overall and best_overall["price"] <= MAX_PRICE:
-            if last_sent != best_overall["price"]:
-                bot.send_message(
-                    CHAT_ID,
-                    f"🔥 UCUZ UÇAK!\n"
-                    f"Tarih: {best_date}\n"
-                    f"Firma: {best_overall['airline']}\n"
-                    f"Saat: {best_overall['departure']} - {best_overall['arrival']}\n"
-                    f"Fiyat: {int(best_overall['price'])} TL"
-                )
-                last_sent = best_overall["price"]
+                message += "\n"
+            else:
+                message += f"{d} → veri yok\n\n"
+
+        bot.send_message(CHAT_ID, message)
 
         time.sleep(60 * 30)
 
