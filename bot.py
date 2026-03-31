@@ -8,18 +8,17 @@ CHAT_ID = os.getenv("CHAT_ID")
 API_KEY = os.getenv("API_KEY")
 
 bot = telebot.TeleBot(TOKEN)
-bot.send_message(CHAT_ID, "TEST MESAJI")
+
+MAX_PRICE = 4500  # TL
 
 
-MAX_PRICE = MAX_PRICE = 4500  # TL
-
-def get_price():
+def get_price_for_date(date):
     url = "https://flights-scraper-real-time.p.rapidapi.com/flights/search-oneway"
 
     querystring = {
         "originSkyId": "SAW",
         "destinationSkyId": "EZS",
-        "date": "2026-08-26",
+        "date": date,
         "adults": "1",
         "currency": "TRY",
         "market": "TR",
@@ -35,8 +34,6 @@ def get_price():
 
     try:
         data = response.json()
-
-        #  EN UCUZ FİYATI BUL
         prices = []
 
         for item in data["data"]["itineraries"]:
@@ -56,19 +53,31 @@ def get_price():
 def check():
     last_sent = None
 
+    dates = [
+        "2026-08-23",
+        "2026-08-28",
+        "2026-08-29"
+    ]
+
     while True:
-        price = get_price()
+        best_price = None
+        best_date = None
 
-        print("Fiyat:", price)
+        for d in dates:
+            price = get_price_for_date(d)
+            print(f"{d} fiyat:", price)
 
-        if price:
+            if price:
+                if best_price is None or price < best_price:
+                    best_price = price
+                    best_date = d
 
-            if price <= MAX_PRICE and price != last_sent:
-                bot.send_message(
-                    CHAT_ID,
-                    f"🔥 UCUZ UÇAK!\nSAW → Elazığ\n{int(price)} TL"
-                )
-                last_sent = price
+        if best_price and best_price <= MAX_PRICE and best_price != last_sent:
+            bot.send_message(
+                CHAT_ID,
+                f"🔥 UCUZ UÇAK!\nTarih: {best_date}\nSAW → Elazığ\n{int(best_price)} TL"
+            )
+            last_sent = best_price
 
         time.sleep(60 * 30)
 
